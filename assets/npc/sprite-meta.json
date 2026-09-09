@@ -1,0 +1,11 @@
+{
+  "cellWidth": 400,
+  "cellHeight": 640,
+  "anchorY": 620,
+  "frames": {
+    "idle": 4,
+    "walk": 4
+  },
+  "walkSourceScale": 0.9197,
+  "walkSource": "NEW WALK.png"
+}

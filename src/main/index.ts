@@ -1,0 +1,21 @@
+import { app } from 'electron'
+import { createNpcWindow, registerNpcWindowIpc } from './npcWindow'
+import { createTray } from './tray'
+
+// Single instance: a background desktop pet has no reason to run twice.
+const gotLock = app.requestSingleInstanceLock()
+if (!gotLock) {
+  app.quit()
+}
+
+app.whenReady().then(() => {
+  registerNpcWindowIpc()
+  createNpcWindow()
+  createTray()
+})
+
+app.on('window-all-closed', () => {
+  // No dock-style "keep running with no window" concept here: the tray
+  // menu is the only way to quit, so if the window is gone, quit too.
+  app.quit()
+})
