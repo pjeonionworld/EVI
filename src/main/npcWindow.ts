@@ -11,6 +11,15 @@ let npcWindow: BrowserWindow | null = null
 // tick during WALK), which was previously observed to make the reported
 // width drift. Being the single source of truth for x/y and always
 // re-asserting the full bounds (via setBounds, not setPosition) avoids that.
+//
+// Kept as sub-pixel floats (not rounded) between ticks: moveBy is fed a
+// per-axis delta every MOVE_TICK_MS, and on a shallow diagonal one axis's
+// delta is often under 0.5px. Rounding it away on every tick (as this used
+// to do) meant that axis simply never moved for most of the walk, then had
+// to jump several px at once in the final ticks once its share of the
+// (shrinking) step grew large enough to survive rounding — visible as a
+// stutter right before arrival. Only BrowserWindow.setBounds (integers-only)
+// rounds now, so the real sub-pixel position always accumulates correctly.
 let currentX = 0
 let currentY = 0
 
@@ -18,24 +27,27 @@ function getWorkArea() {
   return screen.getPrimaryDisplay().workArea
 }
 
-// BrowserWindow bounds require integers — round here so every caller gets a
-// value safe to pass straight through to the native window API.
 function clampX(x: number): number {
   const work = getWorkArea()
   const min = work.x
   const max = work.x + work.width - WINDOW_WIDTH
-  return Math.round(Math.min(Math.max(x, min), max))
+  return Math.min(Math.max(x, min), max)
 }
 
 function clampY(y: number): number {
   const work = getWorkArea()
   const min = work.y
   const max = work.y + work.height - WINDOW_HEIGHT
-  return Math.round(Math.min(Math.max(y, min), max))
+  return Math.min(Math.max(y, min), max)
 }
 
 function applyBounds(): void {
-  npcWindow?.setBounds({ x: currentX, y: currentY, width: WINDOW_WIDTH, height: WINDOW_HEIGHT })
+  npcWindow?.setBounds({
+    x: Math.round(currentX),
+    y: Math.round(currentY),
+    width: WINDOW_WIDTH,
+    height: WINDOW_HEIGHT
+  })
 }
 
 function initialPosition() {
@@ -57,7 +69,6 @@ export function createNpcWindow(): BrowserWindow {
     height: WINDOW_HEIGHT,
     transparent: true,
     frame: false,
-    alwaysOnTop: true,
     resizable: false,
     hasShadow: false,
     skipTaskbar: true,
@@ -67,11 +78,18 @@ export function createNpcWindow(): BrowserWindow {
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      // The desk window's rect (260x300) is much bigger than the visible
+      // desk graphic — it reserves space above for the talk bubble/menu —
+      // and sits at a higher z-order (created after this window). Once EVI
+      // walks close enough that this window's rect falls inside the desk
+      // window's rect, Chromium's default occlusion-based throttling clamps
+      // this renderer's timers to ~1/s regardless of pixel transparency,
+      // which is what made the call-bell approach stutter right at the end.
+      backgroundThrottling: false
     }
   })
 
-  npcWindow.setAlwaysOnTop(true, 'floating')
   npcWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
 
   if (process.env['ELECTRON_RENDERER_URL']) {
@@ -96,16 +114,16 @@ export function registerNpcWindowIpc(): void {
     return { x: currentX, y: currentY }
   })
 
-  ipcMain.handle('npc:moveBy', (_event, dx: number) => {
-    if (!npcWindow) return { x: currentX, hitLeft: false, hitRight: false }
-    const work = getWorkArea()
+  ipcMain.handle('npc:getWorkArea', () => {
+    return getWorkArea()
+  })
+
+  ipcMain.handle('npc:moveBy', (_event, dx: number, dy: number) => {
+    if (!npcWindow) return { x: currentX, y: currentY }
     currentX = clampX(currentX + dx)
+    currentY = clampY(currentY + dy)
     applyBounds()
-    return {
-      x: currentX,
-      hitLeft: currentX <= work.x,
-      hitRight: currentX >= work.x + work.width - WINDOW_WIDTH
-    }
+    return { x: currentX, y: currentY }
   })
 
   ipcMain.on('npc:setPosition', (_event, pos: { x: number; y: number }) => {

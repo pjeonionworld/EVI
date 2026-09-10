@@ -1,4 +1,6 @@
 import { app } from 'electron'
+import { registerCallFlowIpc } from './callFlow'
+import { createDeskWindow } from './deskWindow'
 import { createNpcWindow, registerNpcWindowIpc } from './npcWindow'
 import { createTray } from './tray'
 
@@ -10,7 +12,9 @@ if (!gotLock) {
 
 app.whenReady().then(() => {
   registerNpcWindowIpc()
+  registerCallFlowIpc()
   createNpcWindow()
+  createDeskWindow()
   createTray()
 })
 
