@@ -46,14 +46,10 @@
     ],
     "asar": true,
     "win": {
-      "target": "nsis"
+      "target": "portable"
     },
-    "nsis": {
-      "artifactName": "EVI Setup.${ext}",
-      "oneClick": true,
-      "perMachine": false,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+    "portable": {
+      "artifactName": "EVI.exe"
     }
   }
 }
