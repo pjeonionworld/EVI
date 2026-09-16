@@ -9,3 +9,6 @@ release/
 Thumbs.db
 .env
 .env.*
+
+# Personal data (YouTube watch history, etc.) — never commit
+data/

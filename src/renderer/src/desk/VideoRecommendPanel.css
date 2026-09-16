@@ -1,0 +1,44 @@
+.video-recommend-header {
+  gap: 6px;
+}
+
+.video-recommend-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.video-recommend-toggle {
+  font-size: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.video-recommend-toggle--active {
+  color: #a33;
+}
+
+.video-recommend-toggle--inactive {
+  color: #5a4632;
+}
+
+.video-recommend-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4%;
+  flex: 1;
+  min-height: 0;
+  margin-top: 2%;
+}
+
+.video-recommend-empty {
+  margin: auto;
+}
+
+.video-recommend-row {
+  flex: 1;
+  min-height: 0;
+  padding: 0 4%;
+}

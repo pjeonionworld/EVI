@@ -1,11 +1,12 @@
 {
-  "cellWidth": 400,
-  "cellHeight": 640,
-  "anchorY": 620,
-  "frames": {
-    "idle": 4,
-    "walk": 4
-  },
-  "walkSourceScale": 0.9197,
-  "walkSource": "NEW WALK.png"
+  "cellWidth": 440,
+  "cellHeight": 700,
+  "anchorY": 680,
+  "states": {
+    "idle": { "source": "IDLE SPRITE.png", "frames": 4, "scale": 1.0 },
+    "walk": { "source": "WALK.png", "frames": 4, "scale": 1.0 },
+    "walk_down": { "source": "WALK_DOWN.png", "frames": 4, "scale": 1.0 },
+    "walk_up": { "source": "WALK_UP.png", "frames": 4, "scale": 1.0 },
+    "clean": { "source": "CLEAN.png", "frames": 6, "scale": 1.1682 }
+  }
 }

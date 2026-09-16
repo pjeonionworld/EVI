@@ -1,0 +1,90 @@
+/* Global reset — applies to every window (NPC, desk). */
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Shared utility — every sprite/art background image in the app is pixel
+   art and must never be smoothed when scaled. */
+.pixelated {
+  image-rendering: pixelated;
+}
+
+/* Shared "menu content panel" pattern (JobPostingPanel / VideoRecommendPanel):
+   a back-link + title header, then a scrollable/stacked list of clickable
+   rows. Per-panel spacing differences live in each panel's own CSS file. */
+.panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+.panel-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.panel-back {
+  font-size: 12px;
+  font-weight: bold;
+  color: #5a4632;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.panel-title {
+  font-size: 11px;
+  color: #8a7355;
+}
+
+.panel-empty {
+  font-size: 13px;
+  text-align: center;
+  color: #3a2c1a;
+}
+
+.panel-empty--error {
+  color: #a33;
+}
+
+.panel-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 8px;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.panel-row-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: bold;
+  color: #3a2c1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.panel-row-meta {
+  font-size: 10px;
+  color: #8a7355;
+  white-space: nowrap;
+  flex-shrink: 0;
+}

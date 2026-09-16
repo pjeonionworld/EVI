@@ -34,11 +34,19 @@ import {
   TALK_MENU_CONTENT_WIDTH,
   TALK_MENU_LEFT
 } from '../../../shared/environmentConfig'
-import { IDLE_FRAME_INTERVAL_MS, SPRITE_FRAME_COUNT, WINDOW_HEIGHT, WINDOW_WIDTH } from '../../../shared/npcConfig'
+import { IDLE_FRAME_COUNT, IDLE_FRAME_INTERVAL_MS, WINDOW_HEIGHT, WINDOW_WIDTH } from '../../../shared/npcConfig'
+import './DeskView.css'
+import { JobPostingPanel } from './JobPostingPanel'
 import { useBellAnimation } from './useBellAnimation'
+import { VideoRecommendPanel } from './VideoRecommendPanel'
 
 // UI shell only — no real Tool/Agent behavior yet, just the menu surface.
-const MENU_ITEMS = ['오늘 할 일', '영상 추천', '채용공고', '오늘의 운세', '재정', '무엇이든 물어보기']
+// 포켓몬 스타일 대화 선택지 — 세로 목록에서 항목을 고르면 동작이 즉시 실행되거나
+// (채용공고/영상 시청처럼) 해당 패널로 전환됨.
+//
+// "채용공고"/"영상 시청"은 당분간 비활성화 — 기능(JobPostingPanel/
+// VideoRecommendPanel, 관련 IPC)은 그대로 남아 있고 메뉴에서만 뺀 상태.
+// 다시 켜려면 아래 메뉴 목록에 두 항목을 다시 추가하면 됨.
 
 const deskLeft = getDeskLeft()
 const deskCenterX = Math.round(deskLeft + DESK_DISPLAY_WIDTH / 2)
@@ -55,9 +63,19 @@ export function DeskView() {
   const [isTalking, setIsTalking] = useState(false)
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false)
   const [dockedFrame, setDockedFrame] = useState(0)
+  const [activePanel, setActivePanel] = useState<'menu' | 'videoRecommend' | 'jobPosting'>('menu')
+  const [mouseFollowEnabled, setMouseFollowEnabled] = useState(false)
+  // "책상 숨기기" — DESK.png 그래픽만 안 보이게 함(호출벨/EXIT/대화창은 그대로
+  // 동작). 이 창 안에서만 의미 있는 순수 시각 옵션이라 다른 창과 공유할 필요가
+  // 없어 mouseFollowEnabled와 달리 main IPC 없이 로컬 state로만 관리.
+  const [deskHidden, setDeskHidden] = useState(false)
 
   useEffect(() => {
     return window.evi.onTalkState(setIsTalking)
+  }, [])
+
+  useEffect(() => {
+    window.evi.getMouseFollowEnabled().then(setMouseFollowEnabled)
   }, [])
 
   // Docked EVI's own idle animation. A tiny local ticker rather than
@@ -66,7 +84,7 @@ export function DeskView() {
   useEffect(() => {
     if (!isTalking) return
     const id = setInterval(() => {
-      setDockedFrame((f) => (f + 1) % SPRITE_FRAME_COUNT)
+      setDockedFrame((f) => (f + 1) % IDLE_FRAME_COUNT)
     }, IDLE_FRAME_INTERVAL_MS)
     return () => clearInterval(id)
   }, [isTalking])
@@ -78,66 +96,63 @@ export function DeskView() {
 
   const handleCloseTalk = () => {
     setIsTalking(false)
+    setActivePanel('menu')
     window.evi.closeTalk()
   }
 
+  const toggleMouseFollow = () => {
+    const next = !mouseFollowEnabled
+    window.evi.setMouseFollowEnabled(next)
+    setMouseFollowEnabled(next)
+  }
+
+  const toggleDeskHidden = () => {
+    setDeskHidden((prev) => !prev)
+  }
+
   return (
-    <div style={{ position: 'relative', width: DESK_WINDOW_WIDTH, height: DESK_WINDOW_HEIGHT }}>
-      {/* Docked EVI — drawn first so the desk graphic below paints over her
-          lower body, leaving only the head/shoulders visible above it. */}
+    <div className="desk-root" style={{ width: DESK_WINDOW_WIDTH, height: DESK_WINDOW_HEIGHT }}>
       {isTalking && (
         <div
+          className="desk-docked-npc pixelated"
           style={{
-            position: 'absolute',
             left: dockedPos.x,
             top: dockedPos.y,
             width: WINDOW_WIDTH,
             height: WINDOW_HEIGHT,
             backgroundImage: `url(${idleSheet})`,
-            backgroundSize: `${SPRITE_FRAME_COUNT * WINDOW_WIDTH}px ${WINDOW_HEIGHT}px`,
-            backgroundPosition: `-${dockedFrame * WINDOW_WIDTH}px 0`,
-            backgroundRepeat: 'no-repeat',
-            imageRendering: 'pixelated'
+            backgroundSize: `${IDLE_FRAME_COUNT * WINDOW_WIDTH}px ${WINDOW_HEIGHT}px`,
+            backgroundPosition: `-${dockedFrame * WINDOW_WIDTH}px 0`
+          }}
+        />
+      )}
+
+      {!deskHidden && (
+        <div
+          className="desk-graphic pixelated"
+          style={{
+            left: deskLeft,
+            width: DESK_DISPLAY_WIDTH,
+            height: DESK_DISPLAY_HEIGHT,
+            backgroundImage: `url(${deskImg})`,
+            backgroundSize: `${DESK_CANVAS_WIDTH * DESK_SCALE}px ${DESK_CANVAS_HEIGHT * DESK_SCALE}px`,
+            backgroundPosition: `-${DESK_BBOX_X * DESK_SCALE}px -${DESK_BBOX_Y * DESK_SCALE}px`
           }}
         />
       )}
 
       <div
-        style={{
-          position: 'absolute',
-          left: deskLeft,
-          bottom: 0,
-          width: DESK_DISPLAY_WIDTH,
-          height: DESK_DISPLAY_HEIGHT,
-          // DESK.png's object only fills part of its canvas — crop to just
-          // the object's own bbox the same way sprite frames are cropped,
-          // instead of scaling the whole (mostly-empty) canvas down.
-          backgroundImage: `url(${deskImg})`,
-          backgroundSize: `${DESK_CANVAS_WIDTH * DESK_SCALE}px ${DESK_CANVAS_HEIGHT * DESK_SCALE}px`,
-          backgroundPosition: `-${DESK_BBOX_X * DESK_SCALE}px -${DESK_BBOX_Y * DESK_SCALE}px`,
-          backgroundRepeat: 'no-repeat',
-          imageRendering: 'pixelated'
-        }}
-      />
-
-      {/* Call bell + exit sit just to the right of the desk graphic, stacked
-          and centered against its height, so the three read as one
-          reception-desk unit rather than a window-corner toolbar. */}
-      <div
         onClick={handleBellClick}
         title="EVI 호출"
+        className="desk-bell pixelated"
         style={{
-          position: 'absolute',
           top: buttonColumnTop,
           left: buttonColumnLeft + bellLeftInColumn,
           width: BELL_DISPLAY_WIDTH,
           height: BELL_DISPLAY_HEIGHT,
           backgroundImage: `url(${bellSheet})`,
           backgroundSize: `${BELL_FRAME_COUNT * BELL_DISPLAY_WIDTH}px ${BELL_DISPLAY_HEIGHT}px`,
-          backgroundPosition: `-${bellFrame * BELL_DISPLAY_WIDTH}px 0`,
-          backgroundRepeat: 'no-repeat',
-          imageRendering: 'pixelated',
-          cursor: 'pointer'
+          backgroundPosition: `-${bellFrame * BELL_DISPLAY_WIDTH}px 0`
         }}
       />
 
@@ -145,161 +160,81 @@ export function DeskView() {
         src={exitImg}
         onClick={() => setExitConfirmOpen(true)}
         title="이비 퇴근시키기"
+        className="desk-exit pixelated"
         style={{
-          position: 'absolute',
           top: exitTop,
           left: buttonColumnLeft + exitLeftInColumn,
           width: EXIT_DISPLAY_WIDTH,
-          height: EXIT_DISPLAY_HEIGHT,
-          imageRendering: 'pixelated',
-          cursor: 'pointer'
+          height: EXIT_DISPLAY_HEIGHT
         }}
       />
 
       {isTalking && (
-        // EVI's main conversation surface, not a small popup — sized to
-        // take up most of the window's width, opening to the left of the
-        // desk/bell/exit unit. talk-menu.png already has EVI's portrait +
-        // nameplate baked into its right side, so content stays clear of
-        // that ~30% and is vertically centered rather than clustered at top.
         <div
+          className="desk-talk-menu pixelated"
           style={{
-            position: 'absolute',
             left: TALK_MENU_LEFT,
             bottom: TALK_MENU_BOTTOM,
             width: talkMenuSize.width,
             height: talkMenuSize.height,
             backgroundImage: `url(${talkMenuImg})`,
-            backgroundSize: `${talkMenuSize.width}px ${talkMenuSize.height}px`,
-            backgroundRepeat: 'no-repeat',
-            imageRendering: 'pixelated'
+            backgroundSize: `${talkMenuSize.width}px ${talkMenuSize.height}px`
           }}
         >
-          <div
-            onClick={handleCloseTalk}
-            title="닫기"
-            style={{
-              position: 'absolute',
-              top: -12,
-              right: -8,
-              width: 30,
-              height: 30,
-              borderRadius: '50%',
-              background: '#fbf6ec',
-              border: '2px solid #5a4632',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 15,
-              fontWeight: 'bold',
-              color: '#5a4632',
-              cursor: 'pointer',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.3)'
-            }}
-          >
+          <div onClick={handleCloseTalk} title="닫기" className="desk-talk-menu-close">
             ✕
           </div>
 
-          {/* Menu items overlaid on the blank part of the dialog art — text
-              is never baked into talk-menu.png itself. Positioned against
-              TALK_MENU_CONTENT_*, the plain cream interior measured
-              directly from the art (excludes the borders and the
-              portrait/nameplate tab in the box's upper-right), so this
-              stays correct however big the dialog itself is sized. */}
           <div
+            className="desk-talk-menu-content"
             style={{
-              position: 'absolute',
               left: `${TALK_MENU_CONTENT_LEFT * 100}%`,
               top: `${TALK_MENU_CONTENT_TOP * 100}%`,
               width: `${TALK_MENU_CONTENT_WIDTH * 100}%`,
-              height: `${TALK_MENU_CONTENT_HEIGHT * 100}%`,
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr 1fr',
-              gridAutoRows: '1fr',
-              gap: '4%',
-              overflow: 'hidden'
+              height: `${TALK_MENU_CONTENT_HEIGHT * 100}%`
             }}
           >
-            {MENU_ITEMS.map((item) => (
-              <div
-                key={item}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 15,
-                  padding: '4% 6%',
-                  background: 'rgba(255,255,255,0.55)',
-                  borderRadius: 8,
-                  textAlign: 'center',
-                  color: '#3a2c1a',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}
-              >
-                {item}
+            {activePanel === 'menu' ? (
+              <div className="desk-menu">
+                <div className="desk-menu-header">무엇을 도와드릴까요?</div>
+                <div className="desk-menu-list">
+                  <div onClick={toggleMouseFollow} className="desk-menu-row">
+                    <span className="desk-menu-cursor">▶</span>
+                    <span className="desk-menu-label">
+                      마우스 따라다니기: {mouseFollowEnabled ? '켜짐' : '꺼짐'}
+                    </span>
+                  </div>
+                  <div onClick={toggleDeskHidden} className="desk-menu-row">
+                    <span className="desk-menu-cursor">▶</span>
+                    <span className="desk-menu-label">책상 숨기기: {deskHidden ? '켜짐' : '꺼짐'}</span>
+                  </div>
+                  <div onClick={handleCloseTalk} className="desk-menu-row">
+                    <span className="desk-menu-cursor">▶</span>
+                    <span className="desk-menu-label">대화 종료</span>
+                  </div>
+                </div>
               </div>
-            ))}
+            ) : activePanel === 'videoRecommend' ? (
+              <VideoRecommendPanel onBack={() => setActivePanel('menu')} />
+            ) : (
+              <JobPostingPanel onBack={() => setActivePanel('menu')} />
+            )}
           </div>
         </div>
       )}
 
       {exitConfirmOpen && (
-        <div style={{ position: 'absolute', inset: 0, background: 'transparent' }}>
-          {/* Anchored above the desk graphic (centered over it, bottom edge
-              clear of its top edge) rather than the whole window, so it
-              reads as a popup from the desk instead of floating over the
-              table or the unrelated talk-menu area to its left. */}
+        <div className="desk-exit-overlay">
           <div
-            style={{
-              position: 'absolute',
-              left: deskCenterX,
-              bottom: DESK_DISPLAY_HEIGHT + 16,
-              transform: 'translateX(-50%)',
-              background: '#fff',
-              borderRadius: 10,
-              padding: '16px 18px',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.35)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 12,
-              width: 'max-content'
-            }}
+            className="desk-exit-popup"
+            style={{ left: deskCenterX, bottom: DESK_DISPLAY_HEIGHT + 16 }}
           >
-            <div style={{ fontSize: 13, color: '#222', textAlign: 'center', whiteSpace: 'nowrap' }}>
-              이비를 퇴근시키겠습니까?
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                onClick={() => window.evi.quitApp()}
-                style={{
-                  fontSize: 12,
-                  padding: '6px 12px',
-                  borderRadius: 6,
-                  border: 'none',
-                  background: '#d9534f',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap'
-                }}
-              >
+            <div className="desk-exit-popup-text">이비를 퇴근시키겠습니까?</div>
+            <div className="desk-exit-popup-buttons">
+              <button onClick={() => window.evi.quitApp()} className="desk-exit-btn desk-exit-btn--confirm">
                 퇴근시키기
               </button>
-              <button
-                onClick={() => setExitConfirmOpen(false)}
-                style={{
-                  fontSize: 12,
-                  padding: '6px 12px',
-                  borderRadius: 6,
-                  border: '1px solid #ccc',
-                  background: '#f2f2f2',
-                  color: '#333',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap'
-                }}
-              >
+              <button onClick={() => setExitConfirmOpen(false)} className="desk-exit-btn desk-exit-btn--cancel">
                 아직이야
               </button>
             </div>

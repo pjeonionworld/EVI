@@ -22,9 +22,9 @@ const DESK_NATIVE_HEIGHT = 357
 // height. The laptop/plant sitting on the tabletop are extra and excluded.
 const DESK_NATIVE_TABLETOP_HEIGHT = 308
 
-// Rough chibi proportions: the idle sprite's character fills ~607/640 of
+// Rough chibi proportions: the idle sprite's character fills ~646/700 of
 // its cell (see assets/npc/sprite-meta.json).
-const NPC_CHARACTER_HEIGHT_RATIO = 607 / 640
+const NPC_CHARACTER_HEIGHT_RATIO = 646 / 700
 // Fraction of EVI's height that should sit behind the desk's own box once
 // docked, so the rest (head/shoulders) pokes up above it — a receptionist
 // look. Raising this (vs. the old side-standing scale) is also what makes
@@ -71,30 +71,31 @@ export const EXIT_DISPLAY_HEIGHT = Math.round(EXIT_NATIVE_HEIGHT * EXIT_SCALE)
 
 // ---------------------------------------------------------------------------
 // talk-menu.png (normalized single frame in assets/environment/, generated
-// from the raw "TALK MENU.png" in assets/environment/source/ — untouched).
-// Used only as the dialog's background art — menu items and conversation
-// text are React elements layered on top, never baked into the image. This
-// is EVI's main conversation surface (not a small popup menu), so it's
-// sized to take up most of the window's width — see getTalkMenuDisplaySize.
-const TALK_MENU_NATIVE_WIDTH = 2013
-const TALK_MENU_NATIVE_HEIGHT = 633
+// from the raw "MENU.png" in assets/environment/source/ — untouched). Used
+// only as the dialog's background art — menu items and conversation text
+// are React elements layered on top, never baked into the image. This is
+// EVI's main conversation surface (not a small popup menu), so it's sized
+// to take up most of the window's width — see getTalkMenuDisplaySize.
+const TALK_MENU_NATIVE_WIDTH = 1941
+const TALK_MENU_NATIVE_HEIGHT = 544
 const TALK_MENU_LEFT_MARGIN = 16
 const TALK_MENU_BOTTOM_MARGIN = 10
 // Gap kept between the dialog's right edge and the desk/bell/exit unit.
 const TALK_MENU_DESK_GAP = 24
 
 // Where menu/conversation content can actually go inside talk-menu.png,
-// measured directly from the art (pixel-sampled against the 2013x633
-// source) as fractions of the image's own box — not the desk window. The
-// art is a text box only in its bottom ~41%; everything above that is
-// transparent padding EVI's portrait stands in, and the box's own top-right
-// holds the "EVI" nameplate tab. This rectangle is the plain cream interior
-// with the borders, portrait and nameplate all excluded, so it scales
-// correctly with the dialog no matter how big TALK_MENU_DISPLAY_WIDTH gets.
-export const TALK_MENU_CONTENT_LEFT = 0.02
-export const TALK_MENU_CONTENT_TOP = 0.648
-export const TALK_MENU_CONTENT_WIDTH = 0.72
-export const TALK_MENU_CONTENT_HEIGHT = 0.288
+// measured directly from the art (pixel-sampled against the 1941x544
+// source, scanning inward from each edge along several rows/columns for the
+// first non-border pixel) as fractions of the image's own box — not the
+// desk window. This is just a bordered box with no portrait/nameplate, so
+// almost the entire interior is usable content area. TOP/HEIGHT were
+// previously measured wrong (TOP=0.1066), leaving an oversized, unexplained
+// gap between the box's top border and content like the menu's question
+// line — BOTTOM (TOP+HEIGHT=0.8915) was correct, only TOP was too large.
+export const TALK_MENU_CONTENT_LEFT = 0.0299
+export const TALK_MENU_CONTENT_TOP = 0.0423
+export const TALK_MENU_CONTENT_WIDTH = 0.9397
+export const TALK_MENU_CONTENT_HEIGHT = 0.8492
 
 // ---------------------------------------------------------------------------
 // Desk window layout. The desk graphic, call bell and exit button form one

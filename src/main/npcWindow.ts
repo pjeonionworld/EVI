@@ -132,4 +132,11 @@ export function registerNpcWindowIpc(): void {
     currentY = clampY(pos.y)
     applyBounds()
   })
+
+  // "마우스 따라다니기" — the renderer polls this each follow tick rather
+  // than main pushing cursor updates, since it only needs the value when
+  // follow mode is actually on and already has its own tick loop.
+  ipcMain.handle('npc:getCursorPoint', () => {
+    return screen.getCursorScreenPoint()
+  })
 }

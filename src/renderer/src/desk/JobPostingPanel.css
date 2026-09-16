@@ -1,0 +1,19 @@
+.job-posting-list {
+  flex: 1;
+  min-height: 0;
+  margin-top: 2%;
+  overflow-y: auto;
+}
+
+.job-posting-empty {
+  margin-top: 20%;
+}
+
+.job-posting-row {
+  /* Fixed px, not %, for the vertical padding/gap — CSS resolves padding
+     percentages against the element's WIDTH, and this panel is much wider
+     than it is tall, so a "small" % here blew up into oversized vertical
+     whitespace that squeezed the title text down to unreadable. */
+  padding: 3px 4%;
+  margin-bottom: 4px;
+}

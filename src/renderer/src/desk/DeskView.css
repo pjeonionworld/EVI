@@ -1,0 +1,192 @@
+.desk-root {
+  position: relative;
+}
+
+/* Docked EVI — drawn first so the desk graphic below paints over her lower
+   body, leaving only the head/shoulders visible above it. */
+.desk-docked-npc {
+  position: absolute;
+  background-repeat: no-repeat;
+}
+
+/* DESK.png's object only fills part of its canvas — cropped to just the
+   object's own bbox the same way sprite frames are cropped, instead of
+   scaling the whole (mostly-empty) canvas down. */
+.desk-graphic {
+  position: absolute;
+  bottom: 0;
+  background-repeat: no-repeat;
+}
+
+/* Call bell + exit sit just to the right of the desk graphic, stacked and
+   centered against its height, so the three read as one reception-desk
+   unit rather than a window-corner toolbar. */
+.desk-bell {
+  position: absolute;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.desk-exit {
+  position: absolute;
+  cursor: pointer;
+}
+
+/* EVI's main conversation surface, not a small popup — sized to take up
+   most of the window's width, opening to the left of the desk/bell/exit
+   unit. */
+.desk-talk-menu {
+  position: absolute;
+  background-repeat: no-repeat;
+}
+
+.desk-talk-menu-close {
+  position: absolute;
+  top: -12px;
+  right: -8px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #fbf6ec;
+  border: 2px solid #5a4632;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: bold;
+  color: #5a4632;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Content area overlaid on the blank part of the dialog art — text is never
+   baked into talk-menu.png itself. Positioned against TALK_MENU_CONTENT_*
+   (the plain cream interior measured directly from the art), so this stays
+   correct however big the dialog itself is sized. Swapped between the menu
+   grid and whichever menu item's own panel is active — never stacked. */
+.desk-talk-menu-content {
+  position: absolute;
+  overflow: hidden;
+  /* TALK_MENU_CONTENT_* now maps to the box's true interior edges (measured
+     pixel-by-pixel from talk-menu.png), so this padding is the only gap
+     kept between content and the border art — not baked into the geometry
+     constants themselves. border-box keeps the padded box within the width/
+     height set inline instead of growing past the measured edges. */
+  box-sizing: border-box;
+  padding: 1.5% 2%;
+}
+
+/* 포켓몬 대화창 스타일 — 상단에 질문 한 줄, 아래로 선택지가 세로로 나열되고
+   마우스를 올린 항목 앞에만 ▶ 커서가 나타남. */
+.desk-menu {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+.desk-menu-header {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: bold;
+  color: #3a2c1a;
+  margin-bottom: 4%;
+}
+
+.desk-menu-list {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+  min-height: 0;
+  gap: 2%;
+}
+
+.desk-menu-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 4px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.desk-menu-row:hover {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.desk-menu-cursor {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #d9534f;
+  visibility: hidden;
+}
+
+.desk-menu-row:hover .desk-menu-cursor {
+  visibility: visible;
+}
+
+.desk-menu-label {
+  font-size: 14px;
+  color: #3a2c1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.desk-exit-overlay {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+}
+
+/* Anchored above the desk graphic (centered over it, bottom edge clear of
+   its top edge) rather than the whole window, so it reads as a popup from
+   the desk instead of floating over the table or the unrelated talk-menu
+   area to its left. */
+.desk-exit-popup {
+  position: absolute;
+  transform: translateX(-50%);
+  background: #fff;
+  border-radius: 10px;
+  padding: 16px 18px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: max-content;
+}
+
+.desk-exit-popup-text {
+  font-size: 13px;
+  color: #222;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.desk-exit-popup-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.desk-exit-btn {
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.desk-exit-btn--confirm {
+  border: none;
+  background: #d9534f;
+  color: #fff;
+}
+
+.desk-exit-btn--cancel {
+  border: 1px solid #ccc;
+  background: #f2f2f2;
+  color: #333;
+}
